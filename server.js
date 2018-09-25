@@ -33,6 +33,31 @@ const User = connection.define('User', {
   }
 });
 
+const Post = connection.define('Post', {
+  id: {
+    primaryKey: true,
+    type: Sequelize.UUID,
+    defaultValue: Sequelize.UUIDV4
+  },
+  title: Sequelize.STRING,
+  content: Sequelize.TEXT
+});
+
+app.get('/allposts', (req, res) => {
+  Post.findAll({
+    include: [{
+      model: User, as: 'UserRef'
+    }]
+  })
+    .then(posts => {
+      res.json(posts);
+    })
+    .catch(error => {
+      console.log(error);
+      res.status(404).send(error);
+    })
+});
+
 app.get('/findall', (req, res) => {
   User.findAll({
     where: {
@@ -133,20 +158,35 @@ app.post('/post', (req, res) => {
   
 });
 
+Post.belongsTo(User, {as: 'UserRef', foreignKey: 'userId'});
+
 connection
   .sync({
     // logging: console.log
-    // force: true
+    force: true
   })
-  // .then(() => {
-  //   User.bulkCreate(_USERS)
-  //     .then(users => {
-  //       console.log('Success Adding Users');
-  //     })
-  //     .catch(error => {
-  //       console.log(error);
-  //     })
-  // })
+  .then(() => {
+    User.bulkCreate(_USERS)
+      .then(users => {
+        console.log('Success adding users');
+      })
+      .catch(error => {
+        console.log(error);
+      })
+  })
+  .then(() => {
+    Post.create({
+      userId: 1,
+      title: 'First Post',
+      content: 'Some random content 1'
+    })
+      .then(users => {
+        console.log('Success Adding Users');
+      })
+      .catch(error => {
+        console.log(error);
+      })
+  })
   .then(() => {
     console.log('Connection to database established successfully');
   })
